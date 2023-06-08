@@ -30,7 +30,7 @@ AviaBlog - это веб-сайт, разработанный для фанат�
 
 ```shell
 # Windows
-> git clone https://github.com/yourusername/aviablog_django.git
+> git clone https://github.com/semyonnakrokhin/aviablog_django.git
 ```
 
 3. Перейдите в каталог проекта:
