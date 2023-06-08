@@ -111,6 +111,7 @@ class FlightDetailService:
 
         flight_dict = {
             'airframe_photo_url': flight.airframe.photo,
+            'registration_number': flight.airframe.registration_number,
             'airline': flight.airframe.airline.name,
             'flight_number': flight.flight_number,
             'date': flight.date,
