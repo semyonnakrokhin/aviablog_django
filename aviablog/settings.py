@@ -23,12 +23,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-kq$tg_*$dolb@eog(zd@993#xtyl*l4%i*c64bi6)f8nlvgn*_'
+SECRET_KEY = "django-insecure-kq$tg_*$dolb@eog(zd@993#xtyl*l4%i*c64bi6)f8nlvgn*_"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = int(os.environ.get("DEBUG", default=0))
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
 INTERNAL_IPS = [
     '127.0.0.1',
@@ -83,6 +83,13 @@ WSGI_APPLICATION = 'aviablog.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+
+print(os.getenv('DB_HOST'))
+print(os.getenv('DB_PORT'))
+print(os.getenv('DB_NAME'))
+print(os.getenv('DB_USER'))
+print(os.getenv('DB_PASSWORD'))
+
 
 DATABASES = {
     "default": {

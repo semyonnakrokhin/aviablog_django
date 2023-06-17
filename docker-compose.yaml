@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command:
+      - sh
+      - -c
+      - |
+        python manage.py migrate
+        python manage.py loaddata fixture.json
+        python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - ./:/usr/src/app/
+    ports:
+      - 8000:8000
+    env_file:
+      - ./.env.dev
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:13.0-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_USER=semyon
+      - POSTGRES_PASSWORD=spotting
+      - POSTGRES_DB=aviablog_db
+    ports:
+      - 5433:5432
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "aviablog_db", "-U", "semyon" ]
+
+
+volumes:
+  postgres_data:
