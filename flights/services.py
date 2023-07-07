@@ -109,34 +109,78 @@ class FlightDetailService:
         departure_info = flight.flightinfo_set.get(status='Departure')
         arrival_info = flight.flightinfo_set.get(status='Arrival')
 
+        id_dict = {
+            'usertrip_id': trip.id,
+            'flight_id': flight.id,
+            'meal_id': meal.id,
+            'departure_id': departure_info.id,
+            'arrival_id': arrival_info.id,
+            'airframe_id': trip.flight.airframe.id,
+            'aircraft_type_id': trip.flight.airframe.aircraft_type.id,
+            'airline_id': trip.flight.airframe.airline.id,
+            **{f'track_image_{i}': track.id for i, track in enumerate(trip.trackimage_set.all())}
+        }
+
         flight_dict = {
-            'airframe_photo_url': flight.airframe.photo,
+            'usertripslug': trip.slug,
+
+            # 'airframe_photo': flight.airframe.photo,
             'registration_number': flight.airframe.registration_number,
-            'airline': flight.airframe.airline.name,
+            'serial_number': flight.airframe.serial_number,
+            'airline_name': flight.airframe.airline.name,
+
             'flight_number': flight.flight_number,
-            'date': flight.date,
-            'aircraft_type': ' '.join((flight.airframe.aircraft_type.manufacturer,
-                                       flight.airframe.aircraft_type.generic_type)),
-            'route': ' — '.join((departure_info.airport_code, arrival_info.airport_code)),
+            'date': flight.date.strftime('%Y-%m-%d'),
             'flight_time': flight.flight_time,
 
-            'passenger': trip.passenger.username,
+            'manufacturer': flight.airframe.aircraft_type.manufacturer,
+            'generic_type': flight.airframe.aircraft_type.generic_type,
+            'aircraft_type': ' '.join((flight.airframe.aircraft_type.manufacturer,
+                                       flight.airframe.aircraft_type.generic_type)),
+
+            'user': trip.passenger,
             'seat': trip.seat,
             'neighbors': trip.neighbors,
             'comments': trip.comments,
-            'price': trip.price,
+            'ticket_price': trip.price,
 
             'drinks': meal.drinks,
             'appertize': meal.appertize,
             'main_course': meal.main_course,
             'desert': meal.desert,
             'meal_price': meal.price,
-            'meal_photo_url': meal.photo,
+            # 'meal_photo': meal.photo,
+
+            'route': ' — '.join((departure_info.airport_code, arrival_info.airport_code)),
 
             'departure_info': departure_info,
             'arrival_info': arrival_info,
 
-            'track_images': trip.trackimage_set.all()
+            'departure_airport_code': departure_info.airport_code ,
+            'departure_gate': departure_info.gate,
+            'departure_is_boarding_bridge': departure_info.is_boarding_bridge,
+            'departure_schedule_time': departure_info.schedule_time,
+            'departure_actual_time': departure_info.actual_time,
+            'departure_runway': departure_info.runway,
+            'departure_metar': departure_info.metar,
+
+            'arrival_airport_code': arrival_info.airport_code ,
+            'arrival_gate': arrival_info.gate,
+            'arrival_is_boarding_bridge': arrival_info.is_boarding_bridge,
+            'arrival_schedule_time': arrival_info.schedule_time,
+            'arrival_actual_time': arrival_info.actual_time,
+            'arrival_runway': arrival_info.runway,
+            'arrival_metar': arrival_info.metar,
+
+            'track_images': trip.trackimage_set.all(),
+
+            # **{f'track_image_{i}': track.track_img for i, track in enumerate(trip.trackimage_set.all())}
         }
 
-        return flight_dict
+        files = {
+            'airframe_photo': flight.airframe.photo,
+            'meal_photo': meal.photo,
+            **{f'track_image_{i}': track.track_img for i, track in enumerate(trip.trackimage_set.all())}
+        }
+
+        return flight_dict, files, id_dict

@@ -13,13 +13,13 @@
     <table class="table table-striped main-table">
       <thead>
         <tr>
-          <th colspan="2"><img src="{{ MEDIA_URL }}{{ flight.airframe_photo_url }}" alt="Фото самолета" style="display: block; margin: 0 auto; max-height: 150px;"></th>
+          <th colspan="2"><img src="{{ MEDIA_URL }}{{ flight.airframe_photo }}" alt="Фото самолета" style="display: block; margin: 0 auto; max-height: 150px;"></th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td style="width: 40%">Авиакомпания</td>
-          <td style="width: 60%">{{ flight.airline }}</td>
+          <td style="width: 60%">{{ flight.airline_name }}</td>
         </tr>
         <tr>
           <td>Тип ВС</td>
@@ -51,7 +51,7 @@
         </tr>
         <tr>
           <td>Пассажир</td>
-          <td>{{ flight.passenger }}</td>
+          <td>{{ flight.user }}</td>
         </tr>
         <tr>
           <td>Место</td>
@@ -67,7 +67,7 @@
         </tr>
         <tr>
           <td>Стоимость билета, руб</td>
-          <td>{{ flight.price }}</td>
+          <td>{{ flight.ticket_price }}</td>
         </tr>
         <tr>
           <td></td>
@@ -94,7 +94,7 @@
           <td>{{ flight.meal_price }}</td>
         </tr>
         <tr>
-          <th colspan="2"><img src="{{ MEDIA_URL }}{{ flight.meal_photo_url }}" alt="Фото питания" style="display: block; margin: 0 auto; max-height: 150px;"></th>
+          <th colspan="2"><img src="{{ MEDIA_URL }}{{ flight.meal_photo }}" alt="Фото питания" style="display: block; margin: 0 auto; max-height: 150px;"></th>
         </tr>
       </tbody>
     </table>
@@ -194,6 +194,25 @@
   </div>
 </div>
 
+<!-- Кнопки и ссылки -->
+<div class="container mt-4">
+  <div class="row justify-content-end">
+    <div class="col-md-12">
+      {% if user.is_authenticated and flight.user.username == user.username %}
+        <div class="button-container text-right">
+          <a href="{% url 'flight_update' flight.usertripslug %}" class="btn btn-primary">Edit</a>
+
+          <form action="#" method="post" class="d-inline">
+            {% csrf_token %}
+            <input type="submit" class="btn btn-danger" value="Delete">
+          </form>
+          
+          <a href="#" class="btn btn-secondary">Get in PDF</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
 {% endblock content %}
 
 

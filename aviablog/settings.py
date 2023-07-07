@@ -11,9 +11,18 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 import os
 from pathlib import Path
+
+import django.core.mail.backends.console
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# AUTH_USER_MODEL = 'users.CustomUser'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,13 +47,14 @@ INTERNAL_IPS = [
 # Application definition
 
 INSTALLED_APPS = [
-    'flights.apps.FlightsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'flights.apps.FlightsConfig',
+    'users.apps.UsersConfig',
     'debug_toolbar',
 ]
 
@@ -83,12 +93,6 @@ WSGI_APPLICATION = 'aviablog.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
-print(os.getenv('DB_HOST'))
-print(os.getenv('DB_PORT'))
-print(os.getenv('DB_NAME'))
-print(os.getenv('DB_USER'))
-print(os.getenv('DB_PASSWORD'))
 
 
 DATABASES = {

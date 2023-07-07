@@ -9,6 +9,7 @@ urlpatterns = [
     path("passengers/", views.PassengersView.as_view(), name="passengers"),
     path("profile/<slug:username>/", views.ProfileView.as_view(), name="profile"),
     path("flight/<slug:usertripslug>/", views.FlightView.as_view(), name="flight"),
+    path("flight/<slug:usertripslug>/update", views.FlightUpdateView.as_view(), name="flight_update"),
     path("add_flight/", views.AddFlightView.as_view(), name="add_flight")
 ]
 

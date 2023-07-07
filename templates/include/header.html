@@ -20,9 +20,13 @@
           <li class="nav-item {% if request.path == '/passengers/' %}active{% endif %}">
             <a class="nav-link" href="{% url 'passengers' %}">Passengers</a>
           </li>
+
+          {% if user.is_authenticated %}
           <li class="nav-item {% if request.path == '/add_flight/' %}active{% endif %}">
             <a class="nav-link btn btn-danger" href="{% url 'add_flight' %}">Add Flight</a>
           </li>
+          {% endif %}
+
         </ul>
       </div>
 
@@ -31,8 +35,20 @@
           <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
           <button class="btn btn-outline-success" type="submit">Search</button>
         </form>
-        <button class="btn btn-outline-light me-2">Log in</button>
-        <button class="btn btn-primary">Sign up</button>
+
+        {% if user.is_authenticated %}
+        <div class="user-info btn btn-outline-light me-2 p-2 rounded d-flex align-items-center">
+          <p class="username text-white m-0 me-2">{{ user.username }}</p>
+          <a href="{% url 'logout' %}"><button class="logout-btn text-white">Log out</button></a>
+        </div>
+        {% else %}
+        <a href="{% url 'login' %}">
+          <button class="btn btn-outline-light me-2">Log in</button>
+        </a>
+        <a href="{% url 'register' %}">
+          <button class="btn btn-primary">Sign up</button>
+        </a>
+        {% endif %}
       </div>
     </div>
   </nav>

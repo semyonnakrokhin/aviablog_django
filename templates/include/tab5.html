@@ -1,3 +1,5 @@
+{% load my_tags %}
+
 <div class="border p-3 mb-3">
     <div class="text-center mb-3">
         <!-- Кнопка для добавления нового поля -->
@@ -6,16 +8,30 @@
         </button>
     </div>
     <div id="fields-container">
-        <div class="form-group row mb-3 align-items-center field">
-            <!-- Поле для загрузки фотографии трека -->
-            <div class="col">
+<!--        <div class="form-group row mb-3 align-items-center field">-->
+<!--            &lt;!&ndash; Поле для загрузки фотографии трека &ndash;&gt;-->
+<!--            <div class="col">-->
+<!--                <div class="input-group p-2">-->
+<!--                    <input type="file" name="track_image_0" class="form-control-file track-image-field">-->
+<!--                    <button type="button" class="btn btn-danger btn-sm remove-field-btn">-->
+<!--                        <i class="fas fa-minus-circle"></i>-->
+<!--                    </button>-->
+<!--                </div>-->
+<!--            </div>-->
+<!--        </div>-->
+        {% track_images_html form as field_collection %}
+
+        {% for field_html in field_collection %}
+            <div class="form-group row mb-3 align-items-center field">
+              <div class="col">
                 <div class="input-group p-2">
-                    <input type="file" name="track_image_0" class="form-control-file track-image-field">
-                    <button type="button" class="btn btn-danger btn-sm remove-field-btn">
-                        <i class="fas fa-minus-circle"></i>
-                    </button>
+                    {{ field_html }}
+                  <button type="button" class="btn btn-danger btn-sm remove-field-btn">
+                    <i class="fas fa-minus-circle"></i>
+                  </button>
                 </div>
+              </div>
             </div>
-        </div>
+        {% endfor %}
     </div>
 </div>
