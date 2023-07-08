@@ -1,17 +1,17 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Prefetch
-from django.forms import formset_factory
-from django.shortcuts import render, redirect
+from django.forms import modelformset_factory
+from django.db import transaction
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, TemplateView, DetailView, CreateView, FormView, UpdateView
-from .forms import AddFlightForm, TrackImageForm
+from .forms import AddFlightForm
 from .services import FlightInformationService, PassengerService, PassengerProfileService, FlightDetailService
 
 from .models import *
 from pprint import pprint
-
 
 
 class HomeView(ListView):
@@ -67,46 +67,73 @@ class FlightUpdateView(View):
 
     def get(self, request, usertripslug):
         data, files, _ = FlightDetailService.get_flight_details(usertripslug)
+        track_images_in_db = data.get('track_images')
+        TrackImageFormset = modelformset_factory(TrackImage, fields=('track_img',), extra=2)
 
+        formset = TrackImageFormset(queryset=track_images_in_db)
         form = AddFlightForm(initial={**data, **files})
 
         context = {
             'form': form,
+            'formset': formset,
             'title': 'Edit Flight',
             'view_name': 'flight_update',
             'url_args': usertripslug
         }
         return render(request, self.template_name, context=context)
 
+    def get_files(self, request, usertripslug: str):
+        _, files, _ = FlightDetailService.get_flight_details(usertripslug)
+        files.update(request.FILES.dict())
+        print(files)
+        return files
+
     def post(self, request, usertripslug):
         _, files, id_dict = FlightDetailService.get_flight_details(usertripslug)
+        trip = get_object_or_404(UserTrip, slug=usertripslug)
 
+        form = AddFlightForm(data=request.POST, files=self.get_files(request, usertripslug))
 
-        # TrackImageFormset = formset_factory(TrackImageForm, extra=2)
-        # formset = TrackImageFormset()
+        TrackImageFormset = modelformset_factory(TrackImage, fields=('track_img',), extra=2)
+        formset = TrackImageFormset(request.POST or None, request.FILES or None)
 
-        pprint(request.POST)
-        print('_____________')
-        print('FILES BEFORE adding request.FILES')
-        pprint(files)
+        if form.is_valid() and formset.is_valid():
 
-        files.update(request.FILES.dict())
+            with transaction.atomic():
+                form.save(user=request.user, **id_dict)
 
-        print('FILES AFTER adding request.FILES')
-        pprint(files)
+                for index, f in enumerate(formset):
+                    if f.cleaned_data:
 
-        form = AddFlightForm(request.POST, files)
+                        if f.cleaned_data.get('id') is None:
+                            # Мы загрузили новое изображение в форму
 
-        if form.is_valid():
-            form.save(user=request.user, **id_dict)
+                            track_image_instance = TrackImage(trip=trip, track_img=f.cleaned_data.get('track_img'))
+                            track_image_instance.save()
+                        elif f.cleaned_data.get('track_img') is False:
+                            # Мы поставили галочку напротив очистить
+                            id = f.cleaned_data.get('id').id
+
+                            track_image_instance = TrackImage.objects.get(pk=id)
+                            track_image_instance.delete()
+                        else:
+                            # Если изображение было загружено ранее (то есть у него уже есть id в бд)
+                            id = f.cleaned_data.get('id').id
+
+                            track_image_instance_in_db = TrackImage.objects.get(pk=id)
+                            track_image_instance_in_db.track_img = \
+                                TrackImage(trip=trip, track_img=f.cleaned_data.get('track_img')).track_img
+                            track_image_instance_in_db.save()
+
             return redirect('flight', usertripslug=usertripslug)
         else:
-            # Если форма не прошла валидацию, выведите ошибку в консоль
-            print(form.errors)
+            print(formset.errors)
+            print(formset.non_form_errors())
 
         context = {
             'title': 'Edit Flight',
             'form': form,
+            'formset': formset,
             'view_name': 'flight_update',
             'url_args': usertripslug
         }
@@ -128,4 +155,3 @@ class AddFlightView(LoginRequiredMixin, FormView):
         context['url_args'] = ''
         context['title'] = 'Add New Flight'
         return context
-

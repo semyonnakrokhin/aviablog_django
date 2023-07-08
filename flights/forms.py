@@ -20,16 +20,21 @@ from .models import (Flight,
 class MyFormMixin:
     def update_create_delete_data(self, model, data: dict, id: Union[int, None]):
 
+        if id is None:
+            # Создаем новую запись в бд (либо берем уже существующую, если она присутствует)
+            instance, _ = model.objects.get_or_create(**data)
+
+
         if id is not None:
-            # First check if instance with the data exists in database
-            supposed_instance = model.objects.filter(**data)
+            # Если мы редактируем запись в таблице
+            supposed_instance = model.objects.filter(**data) # Пытаемся получить запись в случае, если мы не внесли изменения
             if supposed_instance:
+                # Случай, когда мы не вносили изменений
                 instance = supposed_instance.first()
             else:
+                # Случай, когда мы внесли изменения
                 instance = model(pk=id, **data)
                 instance.save()
-        else:
-            instance, _ = model.objects.get_or_create(**data)
 
         return instance
 
@@ -50,7 +55,7 @@ class AircraftTypeForm(forms.Form, MyFormMixin):
         return self.update_create_delete_data(AircraftType, data_for_aircraft_type, aircraft_type_id)
 
 
-class AirlineForm(forms.Form, MyFormMixin, forms.ModelForm):
+class AirlineForm(forms.Form, MyFormMixin):
     # existing_airlines = Airline.objects.values_list('name', flat=True)
 
     airline_name = forms.CharField(label='Airline name',
@@ -245,46 +250,46 @@ class ArrivalFlightInfoForm(forms.Form, MyFormMixin):
         return self.update_create_delete_data(FlightInfo, data_for_flight_info, arrival_id)
 
 
-class TrackImageForm(forms.Form, MyFormMixin):
-    # track_img = forms.ImageField(label='Фото трэка', required=False)
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        track_images = self.initial.get('track_images', [])
-
-        if not track_images:  # Создаем одно поле, если нет предыдущих изображений
-            self.fields['track_image_0'] = forms.ImageField(required=False,
-                                                            widget=forms.ClearableFileInput())
-        else:  # Создаем коллекцию полей с предыдущими изображениями
-            for i, image_file in enumerate(track_images):
-                field_name = f'track_image_{i}'
-                self.fields[field_name] = forms.ImageField(required=False,
-                                                           initial=image_file,
-                                                           widget=forms.ClearableFileInput())
-
-    def save_track_images(self, trip: UserTrip, track_image_ids: dict):
-        track_image_instances = []
-        track_images_post = {field_name: image
-                             for field_name, image in self.files.items()
-                             if field_name.startswith('track_image_')}
-
-        for track_image_num, image in track_images_post.items():
-
-            track_image_id = track_image_ids.get(track_image_num)
-
-            data_for_track_image = {
-                'track_img': image,
-                'trip': trip
-            }
-
-            print(data_for_track_image, track_image_id)
-
-            track_image_instance = self.update_create_delete_data(TrackImage, data_for_track_image, track_image_id)
-
-            track_image_instances.append(track_image_instance)
-
-        return track_image_instances
+# class TrackImageForm(forms.Form, MyFormMixin):
+#     # track_img = forms.ImageField(label='Фото трэка', required=False)
+#
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#
+#         track_images = self.initial.get('track_images', [])
+#
+#         if not track_images:  # Создаем одно поле, если нет предыдущих изображений
+#             self.fields['track_image_0'] = forms.ImageField(required=False,
+#                                                             widget=forms.ClearableFileInput())
+#         else:  # Создаем коллекцию полей с предыдущими изображениями
+#             for i, image_file in enumerate(track_images):
+#                 field_name = f'track_image_{i}'
+#                 self.fields[field_name] = forms.ImageField(required=False,
+#                                                            initial=image_file,
+#                                                            widget=forms.ClearableFileInput())
+#
+#     def save_track_images(self, trip: UserTrip, track_image_ids: dict):
+#         track_image_instances = []
+#         track_images_post = {field_name: image
+#                              for field_name, image in self.files.items()
+#                              if field_name.startswith('track_image_')}
+#
+#         for track_image_num, image in track_images_post.items():
+#
+#             track_image_id = track_image_ids.get(track_image_num)
+#
+#             data_for_track_image = {
+#                 'track_img': image,
+#                 'trip': trip
+#             }
+#
+#             print(data_for_track_image, track_image_id)
+#
+#             track_image_instance = self.update_create_delete_data(TrackImage, data_for_track_image, track_image_id)
+#
+#             track_image_instances.append(track_image_instance)
+#
+#         return track_image_instances
 
 
 class AddFlightForm(AircraftTypeForm,
@@ -295,7 +300,6 @@ class AddFlightForm(AircraftTypeForm,
                     MealForm,
                     DepartureFlightInfoForm,
                     ArrivalFlightInfoForm,
-                    # TrackImageForm,
                     forms.Form
                     ):
 

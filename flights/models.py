@@ -41,7 +41,7 @@ class Airframe(models.Model):
     serial_number = models.CharField(
         max_length=50,
         verbose_name='Серийный номер',
-        # unique=True,
+        unique=True,
         blank=True,
         null=True
     )
@@ -139,7 +139,7 @@ class FlightInfo(models.Model):
     class Meta:
         verbose_name = 'Дополнительная информация о полете'
         verbose_name_plural = 'Дополнительная информация о полете'
-        # unique_together = ('flight', 'airport_code')
+        unique_together = ('flight', 'airport_code')
 
     def __str__(self):
         tail = self.status + ': ' + self.airport_code
@@ -171,7 +171,7 @@ class Flight(models.Model):
     class Meta:
         verbose_name = 'Совершенный полет'
         verbose_name_plural = 'Совершенные полеты'
-        # unique_together = ('flight_number', 'date')
+        unique_together = ('flight_number', 'date')
 
     def __str__(self):
         return f'Совершенный полет {self.flight_number}/{self.date}'
@@ -215,7 +215,7 @@ class UserTrip(models.Model):
     class Meta:
         verbose_name = 'Путешествие пользователя'
         verbose_name_plural = 'Путешествия пользователей'
-        # unique_together = ('flight', 'passenger')
+        unique_together = ('flight', 'passenger')
 
     def save(self, *args, **kwargs):
         if not self.slug:
