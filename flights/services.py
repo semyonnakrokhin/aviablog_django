@@ -148,8 +148,8 @@ class FlightDetailService:
             'appertize': meal.appertize,
             'main_course': meal.main_course,
             'desert': meal.desert,
-            'meal_price': meal.price,
-            # 'meal_photo': meal.photo,
+            'meal_price': meal.meal_price,
+            # 'meal_photo': meal.meal_photo,
 
             'route': ' — '.join((departure_info.airport_code, arrival_info.airport_code)),
 
@@ -179,7 +179,7 @@ class FlightDetailService:
 
         files = {
             'airframe_photo': flight.airframe.photo,
-            'meal_photo': meal.photo,
+            'meal_photo': meal.meal_photo,
             **{f'track_image_{i}': track.track_img for i, track in enumerate(trip.trackimage_set.all())}
         }
 

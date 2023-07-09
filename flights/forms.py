@@ -122,7 +122,8 @@ class UserTripForm(forms.Form, MyFormMixin):
         return self.update_create_delete_data(UserTrip, data_for_user_trip, usertrip_id)
 
 
-class MealForm(forms.Form, MyFormMixin):
+class MealForm(forms.ModelForm):
+
     meal_price = forms.DecimalField(label='Цена питания', required=False)
     meal_photo = forms.ImageField(label='Фото питания', required=False)
     drinks = forms.CharField(widget=forms.Textarea(attrs={'rows': 3, 'cols': 70}), initial='Вода')
@@ -130,18 +131,32 @@ class MealForm(forms.Form, MyFormMixin):
     main_course = forms.CharField(widget=forms.Textarea(attrs={'rows': 6, 'cols': 70}), required=False)
     desert = forms.CharField(widget=forms.Textarea(attrs={'rows': 3, 'cols': 70}), required=False)
 
-    def save_meal(self, trip: UserTrip, meal_id=None):
-        data_for_meal = {
-            'drinks': self.cleaned_data['drinks'],
-            'appertize': self.cleaned_data['appertize'],
-            'main_course': self.cleaned_data['main_course'],
-            'desert': self.cleaned_data['desert'],
-            'price': self.cleaned_data['meal_price'],
-            'photo': self.cleaned_data['meal_photo'],
-            'trip': trip
-        }
+    class Meta:
+        model = Meal
+        fields = ('meal_price', 'meal_photo', 'drinks', 'appertize', 'main_course', 'desert')
 
-        return self.update_create_delete_data(Meal, data_for_meal, meal_id)
+    # def save_meal(self, trip: UserTrip, meal_id=None):
+    #     data_for_meal = {
+    #         'drinks': self.cleaned_data['drinks'],
+    #         'appertize': self.cleaned_data['appertize'],
+    #         'main_course': self.cleaned_data['main_course'],
+    #         'desert': self.cleaned_data['desert'],
+    #         'meal_price': self.cleaned_data['meal_price'],
+    #         'meal_photo': self.cleaned_data['meal_photo'],
+    #         'trip': trip
+    #     }
+    #
+    #     return self.update_create_delete_data(Meal, data_for_meal, meal_id)
+    def save(self, trip: UserTrip, commit=False):
+        meal_instance = super().save(commit=False)
+        print(meal_instance.__dict__)
+        meal_instance.trip = trip
+        print(meal_instance.__dict__)
+
+        if commit:
+            meal_instance.save()
+
+        return meal_instance
 
 
 # class FlightInfoForm(forms.Form):
@@ -297,7 +312,6 @@ class AddFlightForm(AircraftTypeForm,
                     AirframeForm,
                     FlightForm,
                     UserTripForm,
-                    MealForm,
                     DepartureFlightInfoForm,
                     ArrivalFlightInfoForm,
                     forms.Form
@@ -328,7 +342,7 @@ class AddFlightForm(AircraftTypeForm,
             user_trip_instance = self.save_user_trip(flight_instance, user, usertrip_id)
 
             # tab3
-            meal_instance = self.save_meal(user_trip_instance, meal_id)
+            # meal_instance = self.save_meal(user_trip_instance, meal_id)
 
             # tab4
             departure_flight_info_instance = self.save_departure_flight_info(flight_instance, departure_id)
@@ -336,3 +350,5 @@ class AddFlightForm(AircraftTypeForm,
 
             # tab5
             # track_image_instances = self.save_track_images(user_trip_instance, track_image_ids)
+
+            return user_trip_instance

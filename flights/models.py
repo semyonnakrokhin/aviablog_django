@@ -266,7 +266,7 @@ class Meal(models.Model):
     appertize = models.TextField(verbose_name='Предложенные закуски', default='')
     main_course = models.TextField(verbose_name='Основные блюда', default='')
     desert = models.TextField(verbose_name='Предложенные десерты', default='')
-    price = models.PositiveSmallIntegerField(
+    meal_price = models.PositiveSmallIntegerField(
         verbose_name='Цена питания',
         blank=True,
         null=True
@@ -277,7 +277,7 @@ class Meal(models.Model):
                f'{self.trip.flight.date}/' \
                f'{filename}'.lower()
 
-    photo = models.ImageField(
+    meal_photo = models.ImageField(
         upload_to=get_airframe_image_path,
         verbose_name='Фотография питания',
         blank=True,

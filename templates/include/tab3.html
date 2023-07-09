@@ -1,50 +1,50 @@
 <div class="border p-3 mb-3">
     <div class="form-group row mb-3">
-        <label class="col-sm-3 col-form-label" for="{{ form.drinks.id_for_label }}">
-            {{ form.drinks.label }}{% if form.drinks.field.required %}*{% endif %}
+        <label class="col-sm-3 col-form-label" for="{{ form_meal.drinks.id_for_label }}">
+            {{ form_meal.drinks.label }}{% if form_meal.drinks.field.required %}*{% endif %}
         </label>
         <div class="col-sm-9">
-            {{ form.drinks }}
+            {{ form_meal.drinks }}
         </div>
     </div>
     <div class="form-group row mb-3">
-        <label class="col-sm-3 col-form-label" for="{{ form.appertize.id_for_label }}">
-            {{ form.appertize.label }}{% if form.appertize.field.required %}*{% endif %}
+        <label class="col-sm-3 col-form-label" for="{{ form_meal.appertize.id_for_label }}">
+            {{ form_meal.appertize.label }}{% if form_meal.appertize.field.required %}*{% endif %}
         </label>
         <div class="col-sm-9">
-            {{ form.appertize }}
+            {{ form_meal.appertize }}
         </div>
     </div>
     <div class="form-group row mb-3">
-        <label class="col-sm-3 col-form-label" for="{{ form.main_course.id_for_label }}">
-            {{ form.main_course.label }}{% if form.main_course.field.required %}*{% endif %}
+        <label class="col-sm-3 col-form-label" for="{{ form_meal.main_course.id_for_label }}">
+            {{ form_meal.main_course.label }}{% if form_meal.main_course.field.required %}*{% endif %}
         </label>
         <div class="col-sm-9">
-            {{ form.main_course }}
+            {{ form_meal.main_course }}
         </div>
     </div>
     <div class="form-group row mb-3">
-        <label class="col-sm-3 col-form-label" for="{{ form.desert.id_for_label }}">
-            {{ form.desert.label }}{% if form.desert.field.required %}*{% endif %}
+        <label class="col-sm-3 col-form-label" for="{{ form_meal.desert.id_for_label }}">
+            {{ form_meal.desert.label }}{% if form_meal.desert.field.required %}*{% endif %}
         </label>
         <div class="col-sm-9">
-            {{ form.desert }}
+            {{ form_meal.desert }}
         </div>
     </div>
     <div class="form-group row mb-3">
-        <label class="col-sm-3 col-form-label" for="{{ form.meal_price.id_for_label }}">
-            {{ form.meal_price.label }}{% if form.meal_price.field.required %}*{% endif %}
+        <label class="col-sm-3 col-form-label" for="{{ form_meal.meal_price.id_for_label }}">
+            {{ form_meal.meal_price.label }}{% if form_meal.meal_price.field.required %}*{% endif %}
         </label>
         <div class="col-sm-9">
-            {{ form.meal_price }}
+            {{ form_meal.meal_price }}
         </div>
     </div>
     <div class="form-group row mb-3">
-        <label class="col-sm-3 col-form-label" for="{{ form.meal_photo.id_for_label }}">
-            {{ form.meal_photo.label }}{% if form.meal_photo.field.required %}*{% endif %}
+        <label class="col-sm-3 col-form-label" for="{{ form_meal.meal_photo.id_for_label }}">
+            {{ form_meal.meal_photo.label }}{% if form_meal.meal_photo.field.required %}*{% endif %}
         </label>
         <div class="col-sm-9">
-            {{ form.meal_photo }}
+            {{ form_meal.meal_photo }}
         </div>
     </div>
 </div>

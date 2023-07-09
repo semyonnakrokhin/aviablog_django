@@ -7,6 +7,7 @@ from flights.models import Airframe, TrackImage, Meal
 @receiver(pre_save, sender=TrackImage)
 @receiver(pre_save, sender=Meal)
 def delete_previous_photo(sender, instance, **kwargs):
+    print('SIGNAL')
     if instance.pk:
         try:
             old_instance = sender.objects.get(pk=instance.pk)
