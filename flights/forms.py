@@ -3,6 +3,7 @@ from typing import Union
 
 from django import forms
 from django.contrib.auth.models import User
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.forms import formset_factory
 
@@ -24,17 +25,19 @@ class MyFormMixin:
             # Создаем новую запись в бд (либо берем уже существующую, если она присутствует)
             instance, _ = model.objects.get_or_create(**data)
 
-
         if id is not None:
-            # Если мы редактируем запись в таблице
-            supposed_instance = model.objects.filter(**data) # Пытаемся получить запись в случае, если мы не внесли изменения
-            if supposed_instance:
-                # Случай, когда мы не вносили изменений
-                instance = supposed_instance.first()
-            else:
-                # Случай, когда мы внесли изменения
-                instance = model(pk=id, **data)
-                instance.save()
+            try:
+                instance = model.objects.get(pk=id)
+                if data:
+                    # Обновляем существующую запись. Если словарь data непустой, то это update
+                    instance = model(pk=id, **data)
+                    instance.save()
+                else:
+                    # Удаляем существующую запись. Если словарь data пустой, то это delete
+                    instance.delete()
+            except ObjectDoesNotExist:
+                # Запись не найдена
+                instance = None
 
         return instance
 
@@ -47,10 +50,13 @@ class AircraftTypeForm(forms.Form, MyFormMixin):
     generic_type = forms.CharField(widget=forms.TextInput(attrs={'list': 'generic_type_choices'}))
 
     def save_aircraft_type(self, aircraft_type_id=None):
-        data_for_aircraft_type = {
-            'manufacturer': self.cleaned_data['manufacturer'],
-            'generic_type': self.cleaned_data['generic_type']
-        }
+        try:
+            data_for_aircraft_type = {
+                'manufacturer': self.cleaned_data['manufacturer'],
+                'generic_type': self.cleaned_data['generic_type']
+            }
+        except AttributeError:
+            data_for_aircraft_type = {}
 
         return self.update_create_delete_data(AircraftType, data_for_aircraft_type, aircraft_type_id)
 
@@ -62,9 +68,12 @@ class AirlineForm(forms.Form, MyFormMixin):
                                    widget=forms.TextInput(attrs={'list': 'airline_choices'}))
 
     def save_airline(self, airline_id=None):
-        data_for_airline = {
-            'name': self.cleaned_data['airline_name']
-        }
+        try:
+            data_for_airline = {
+                'name': self.cleaned_data['airline_name']
+            }
+        except AttributeError:
+            data_for_airline = {}
 
         return self.update_create_delete_data(Airline, data_for_airline, airline_id)
 
@@ -75,13 +84,16 @@ class AirframeForm(forms.Form, MyFormMixin):
     registration_number = forms.CharField(required=True)
 
     def save_airframe(self, aircraft_type: AircraftType, airline: Airline, airframe_id=None):
-        data_for_airframe = {
-            'serial_number': self.cleaned_data['serial_number'],
-            'registration_number': self.cleaned_data['registration_number'],
-            'photo': self.cleaned_data['airframe_photo'],
-            'aircraft_type': aircraft_type,
-            'airline': airline
-        }
+        try:
+            data_for_airframe = {
+                'serial_number': self.cleaned_data['serial_number'],
+                'registration_number': self.cleaned_data['registration_number'],
+                'photo': self.cleaned_data['airframe_photo'],
+                'aircraft_type': aircraft_type,
+                'airline': airline
+            }
+        except AttributeError:
+            data_for_airframe = {}
 
         return self.update_create_delete_data(Airframe, data_for_airframe, airframe_id)
 
@@ -92,12 +104,15 @@ class FlightForm(forms.Form, MyFormMixin):
     flight_time = forms.TimeField(required=False)
 
     def save_flight(self, airframe: Airframe, flight_id=None):
-        data_for_flight = {
-            'flight_number': self.cleaned_data['flight_number'],
-            'date': self.cleaned_data['date'],
-            'flight_time': self.cleaned_data['flight_time'],
-            'airframe': airframe
-        }
+        try:
+            data_for_flight = {
+                'flight_number': self.cleaned_data['flight_number'],
+                'date': self.cleaned_data['date'],
+                'flight_time': self.cleaned_data['flight_time'],
+                'airframe': airframe
+            }
+        except AttributeError:
+            data_for_flight = {}
 
         return self.update_create_delete_data(Flight, data_for_flight, flight_id)
 
@@ -110,20 +125,22 @@ class UserTripForm(forms.Form, MyFormMixin):
     comments = forms.CharField(widget=forms.Textarea(attrs={'cols': 70}), required=False)
 
     def save_user_trip(self, flight: Flight, user: User, usertrip_id=None):
-        data_for_user_trip = {
-            'seat': self.cleaned_data['seat'],
-            'neighbors': self.cleaned_data['neighbors'],
-            'comments': self.cleaned_data['comments'],
-            'price': self.cleaned_data['ticket_price'],
-            'passenger': user,
-            'flight': flight
-        }
+        try:
+            data_for_user_trip = {
+                'seat': self.cleaned_data['seat'],
+                'neighbors': self.cleaned_data['neighbors'],
+                'comments': self.cleaned_data['comments'],
+                'price': self.cleaned_data['ticket_price'],
+                'passenger': user,
+                'flight': flight
+            }
+        except AttributeError:
+            data_for_user_trip = {}
 
         return self.update_create_delete_data(UserTrip, data_for_user_trip, usertrip_id)
 
 
-class MealForm(forms.ModelForm):
-
+class MealForm(forms.Form, MyFormMixin):
     meal_price = forms.DecimalField(label='Цена питания', required=False)
     meal_photo = forms.ImageField(label='Фото питания', required=False)
     drinks = forms.CharField(widget=forms.Textarea(attrs={'rows': 3, 'cols': 70}), initial='Вода')
@@ -131,32 +148,21 @@ class MealForm(forms.ModelForm):
     main_course = forms.CharField(widget=forms.Textarea(attrs={'rows': 6, 'cols': 70}), required=False)
     desert = forms.CharField(widget=forms.Textarea(attrs={'rows': 3, 'cols': 70}), required=False)
 
-    class Meta:
-        model = Meal
-        fields = ('meal_price', 'meal_photo', 'drinks', 'appertize', 'main_course', 'desert')
+    def save_meal(self, trip: UserTrip, meal_id=None):
+        try:
+            data_for_meal = {
+                'drinks': self.cleaned_data['drinks'],
+                'appertize': self.cleaned_data['appertize'],
+                'main_course': self.cleaned_data['main_course'],
+                'desert': self.cleaned_data['desert'],
+                'meal_price': self.cleaned_data['meal_price'],
+                'meal_photo': None if not self.cleaned_data['meal_photo'] else self.cleaned_data['meal_photo'],
+                'trip': trip
+            }
+        except AttributeError:
+            data_for_meal = {}
 
-    # def save_meal(self, trip: UserTrip, meal_id=None):
-    #     data_for_meal = {
-    #         'drinks': self.cleaned_data['drinks'],
-    #         'appertize': self.cleaned_data['appertize'],
-    #         'main_course': self.cleaned_data['main_course'],
-    #         'desert': self.cleaned_data['desert'],
-    #         'meal_price': self.cleaned_data['meal_price'],
-    #         'meal_photo': self.cleaned_data['meal_photo'],
-    #         'trip': trip
-    #     }
-    #
-    #     return self.update_create_delete_data(Meal, data_for_meal, meal_id)
-    def save(self, trip: UserTrip, commit=False):
-        meal_instance = super().save(commit=False)
-        print(meal_instance.__dict__)
-        meal_instance.trip = trip
-        print(meal_instance.__dict__)
-
-        if commit:
-            meal_instance.save()
-
-        return meal_instance
+        return self.update_create_delete_data(Meal, data_for_meal, meal_id)
 
 
 # class FlightInfoForm(forms.Form):
@@ -221,17 +227,20 @@ class DepartureFlightInfoForm(forms.Form, MyFormMixin):
     departure_runway = forms.CharField(label='Active runway', required=True)
 
     def save_departure_flight_info(self, flight: Flight, departure_id=None):
-        data_for_flight_info = {
-            'status': 'Departure',
-            'airport_code': self.cleaned_data['departure_airport_code'],
-            'metar': self.cleaned_data['departure_metar'],
-            'gate': self.cleaned_data['departure_gate'],
-            'is_boarding_bridge': self.cleaned_data['departure_is_boarding_bridge'],
-            'schedule_time': self.cleaned_data['departure_schedule_time'],
-            'actual_time': self.cleaned_data['departure_actual_time'],
-            'runway': self.cleaned_data['departure_runway'],
-            'flight': flight
-        }
+        try:
+            data_for_flight_info = {
+                'status': 'Departure',
+                'airport_code': self.cleaned_data['departure_airport_code'],
+                'metar': self.cleaned_data['departure_metar'],
+                'gate': self.cleaned_data['departure_gate'],
+                'is_boarding_bridge': self.cleaned_data['departure_is_boarding_bridge'],
+                'schedule_time': self.cleaned_data['departure_schedule_time'],
+                'actual_time': self.cleaned_data['departure_actual_time'],
+                'runway': self.cleaned_data['departure_runway'],
+                'flight': flight
+            }
+        except AttributeError:
+            data_for_flight_info = {}
 
         return self.update_create_delete_data(FlightInfo, data_for_flight_info, departure_id)
 
@@ -250,19 +259,38 @@ class ArrivalFlightInfoForm(forms.Form, MyFormMixin):
     arrival_runway = forms.CharField(label='Active runway', required=True)
 
     def save_arrival_flight_info(self, flight: Flight, arrival_id=None):
-        data_for_flight_info = {
-            'status': 'Arrival',
-            'airport_code': self.cleaned_data['arrival_airport_code'],
-            'metar': self.cleaned_data['arrival_metar'],
-            'gate': self.cleaned_data['arrival_gate'],
-            'is_boarding_bridge': self.cleaned_data['arrival_is_boarding_bridge'],
-            'schedule_time': self.cleaned_data['arrival_schedule_time'],
-            'actual_time': self.cleaned_data['arrival_actual_time'],
-            'runway': self.cleaned_data['arrival_runway'],
-            'flight': flight
-        }
+        try:
+            data_for_flight_info = {
+                'status': 'Arrival',
+                'airport_code': self.cleaned_data['arrival_airport_code'],
+                'metar': self.cleaned_data['arrival_metar'],
+                'gate': self.cleaned_data['arrival_gate'],
+                'is_boarding_bridge': self.cleaned_data['arrival_is_boarding_bridge'],
+                'schedule_time': self.cleaned_data['arrival_schedule_time'],
+                'actual_time': self.cleaned_data['arrival_actual_time'],
+                'runway': self.cleaned_data['arrival_runway'],
+                'flight': flight
+            }
+        except AttributeError:
+            data_for_flight_info = {}
 
         return self.update_create_delete_data(FlightInfo, data_for_flight_info, arrival_id)
+
+
+class TrackImageForm(forms.ModelForm):
+    class Meta:
+        model = TrackImage
+        fields = '__all__'
+
+    def save(self, trip: UserTrip, commit=False):
+        track_image_instance = super().save(commit=False)
+
+        track_image_instance.trip = trip
+
+        if commit:
+            track_image_instance.save()
+
+        return track_image_instance
 
 
 # class TrackImageForm(forms.Form, MyFormMixin):
@@ -312,6 +340,7 @@ class AddFlightForm(AircraftTypeForm,
                     AirframeForm,
                     FlightForm,
                     UserTripForm,
+                    MealForm,
                     DepartureFlightInfoForm,
                     ArrivalFlightInfoForm,
                     forms.Form
@@ -319,7 +348,6 @@ class AddFlightForm(AircraftTypeForm,
 
     def save(self, user: User, **kwargs):
         with transaction.atomic():
-
             aircraft_type_id = kwargs.get('aircraft_type_id')
             airline_id = kwargs.get('airline_id')
             airframe_id = kwargs.get('airframe_id')
@@ -328,9 +356,6 @@ class AddFlightForm(AircraftTypeForm,
             meal_id = kwargs.get('meal_id')
             departure_id = kwargs.get('departure_id')
             arrival_id = kwargs.get('arrival_id')
-            track_image_ids = {track_image_num: track_image_id
-                               for track_image_num, track_image_id in kwargs.items()
-                               if 'track_image_' in track_image_num}
 
             # tab1
             aircraft_type_instance = self.save_aircraft_type(aircraft_type_id)
@@ -342,7 +367,7 @@ class AddFlightForm(AircraftTypeForm,
             user_trip_instance = self.save_user_trip(flight_instance, user, usertrip_id)
 
             # tab3
-            # meal_instance = self.save_meal(user_trip_instance, meal_id)
+            meal_instance = self.save_meal(user_trip_instance, meal_id)
 
             # tab4
             departure_flight_info_instance = self.save_departure_flight_info(flight_instance, departure_id)

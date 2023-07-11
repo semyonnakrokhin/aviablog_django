@@ -93,9 +93,11 @@
           <td>Стоимость питания, руб</td>
           <td>{{ flight.meal_price }}</td>
         </tr>
-        <tr>
-          <th colspan="2"><img src="{{ MEDIA_URL }}{{ flight.meal_photo }}" alt="Фото питания" style="display: block; margin: 0 auto; max-height: 150px;"></th>
-        </tr>
+        {% if flight.meal_photo %}
+          <tr>
+            <th colspan="2"><img src="{{ MEDIA_URL }}{{ flight.meal_photo }}" alt="Фото питания" style="display: block; margin: 0 auto; max-height: 150px;"></th>
+          </tr>
+        {% endif %}
       </tbody>
     </table>
 </div>
@@ -202,7 +204,7 @@
         <div class="button-container text-right">
           <a href="{% url 'flight_update' flight.usertripslug %}" class="btn btn-primary">Edit</a>
 
-          <form action="#" method="post" class="d-inline">
+          <form action="{% url 'flight_delete' flight.usertripslug %}" method="post" class="d-inline">
             {% csrf_token %}
             <input type="submit" class="btn btn-danger" value="Delete">
           </form>

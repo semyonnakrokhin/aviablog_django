@@ -7,7 +7,8 @@ from django.http import HttpResponse
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, TemplateView, DetailView, CreateView, FormView, UpdateView
-from .forms import AddFlightForm, MealForm
+from .forms import AddFlightForm, MealForm, TrackImageForm
+from .permissions import IsOwnerPermissionMixin
 from .services import FlightInformationService, PassengerService, PassengerProfileService, FlightDetailService
 
 from .models import *
@@ -61,22 +62,45 @@ class FlightView(DetailView):
         return {**data, **files}
 
 
-class FlightUpdateView(View):
+class FlightDeleteView(IsOwnerPermissionMixin, View):
+    form_class = AddFlightForm
+    formset_class = modelformset_factory(TrackImage, form=TrackImageForm, fields=('track_img',), extra=10)
+
+    def get_passenger(self):
+        data, _, _ = FlightDetailService.get_flight_details(self.kwargs['usertripslug'])
+        return data.get('user')
+
+    def post(self, request, usertripslug):
+        data, files, id_dict = FlightDetailService.get_flight_details(usertripslug)
+        track_images = data.get('track_images')
+
+        form = self.form_class(None, None)
+
+        with transaction.atomic():
+            form.save(user=request.user, **id_dict)
+            for track_image_instance in track_images:
+                track_image_instance.delete()
+
+        return redirect('home')
+
+
+class FlightUpdateView(IsOwnerPermissionMixin, View):
     template_name = 'flights/add_flight.html'
     form_class = AddFlightForm
+
+    def get_passenger(self):
+        data, _, _ = FlightDetailService.get_flight_details(self.kwargs['usertripslug'])
+        return data.get('user')
 
     def get(self, request, usertripslug):
         data, files, id_dict = FlightDetailService.get_flight_details(usertripslug)
         track_images_in_db = data.get('track_images')
-        meal = get_object_or_404(Meal, pk=id_dict['meal_id'])
 
-        TrackImageFormset = modelformset_factory(TrackImage, fields=('track_img',), extra=2)
+        TrackImageFormset = modelformset_factory(TrackImage, form=TrackImageForm, fields=('track_img',), extra=10)
         formset = TrackImageFormset(queryset=track_images_in_db)
         form = AddFlightForm(initial={**data, **files})
-        form_meal = MealForm(instance=meal)
 
         context = {
-            'form_meal': form_meal,
             'form': form,
             'formset': formset,
             'title': 'Edit Flight',
@@ -87,30 +111,31 @@ class FlightUpdateView(View):
 
     def get_files(self, request, usertripslug: str):
         _, files, _ = FlightDetailService.get_flight_details(usertripslug)
+
+        files_copy = files.copy()
+        for field_name, file in files_copy.items():
+            if (field_name + '-clear') in request.POST:
+                files.pop(field_name)
+
         files.update(request.FILES.dict())
         return files
 
     def post(self, request, usertripslug):
         _, files, id_dict = FlightDetailService.get_flight_details(usertripslug)
-        trip = get_object_or_404(UserTrip, slug=usertripslug)
-        meal = get_object_or_404(Meal, pk=id_dict['meal_id'])
 
         form = AddFlightForm(data=request.POST, files=self.get_files(request, usertripslug))
-
-        TrackImageFormset = modelformset_factory(TrackImage, fields=('track_img',), extra=2)
+        TrackImageFormset = modelformset_factory(TrackImage, form=TrackImageForm, fields=('track_img',), extra=10)
         formset = TrackImageFormset(request.POST or None, request.FILES or None)
-
-        form_meal = MealForm(data=request.POST, files=request.FILES, instance=meal)
 
         if form.is_valid() and formset.is_valid():
 
             with transaction.atomic():
-                usertrip_instance = form.save(user=request.user, **id_dict)
-                form_meal.save(trip=usertrip_instance)
+                trip = form.save(user=request.user, **id_dict)
 
                 for index, f in enumerate(formset):
                     if f.cleaned_data:
 
+                        pprint(f.cleaned_data)
                         if f.cleaned_data.get('id') is None:
                             # Мы загрузили новое изображение в форму
 
@@ -135,10 +160,10 @@ class FlightUpdateView(View):
         else:
             print(formset.errors)
             print(formset.non_form_errors())
+            print(form.errors)
 
         context = {
             'title': 'Edit Flight',
-            'form_meal': form_meal,
             'form': form,
             'formset': formset,
             'view_name': 'flight_update',
@@ -149,16 +174,28 @@ class FlightUpdateView(View):
 
 class AddFlightView(LoginRequiredMixin, FormView):
     form_class = AddFlightForm
+    formset_class = modelformset_factory(TrackImage, form=TrackImageForm, fields=('track_img',), extra=10)
     template_name = 'flights/add_flight.html'
     success_url = reverse_lazy('home')
 
     def form_valid(self, form):
-        form.save(user=self.request.user)
-        return super().form_valid(form)
+
+        formset = self.formset_class(self.request.POST or None, self.request.FILES or None)
+
+        if formset.is_valid():
+            with transaction.atomic():
+                trip = form.save(user=self.request.user)
+                for f in formset:
+                    if f.cleaned_data:
+                        track_image_instance = f.save(trip=trip)
+                        track_image_instance.save()
+
+            return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['view_name'] = 'add_flight'
         context['url_args'] = ''
         context['title'] = 'Add New Flight'
+        context['formset'] = self.formset_class(queryset=TrackImage.objects.none())
         return context

@@ -124,7 +124,6 @@ class FlightDetailService:
         flight_dict = {
             'usertripslug': trip.slug,
 
-            # 'airframe_photo': flight.airframe.photo,
             'registration_number': flight.airframe.registration_number,
             'serial_number': flight.airframe.serial_number,
             'airline_name': flight.airframe.airline.name,
@@ -149,7 +148,6 @@ class FlightDetailService:
             'main_course': meal.main_course,
             'desert': meal.desert,
             'meal_price': meal.meal_price,
-            # 'meal_photo': meal.meal_photo,
 
             'route': ' — '.join((departure_info.airport_code, arrival_info.airport_code)),
 
@@ -173,8 +171,6 @@ class FlightDetailService:
             'arrival_metar': arrival_info.metar,
 
             'track_images': trip.trackimage_set.all(),
-
-            # **{f'track_image_{i}': track.track_img for i, track in enumerate(trip.trackimage_set.all())}
         }
 
         files = {
