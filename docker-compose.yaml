@@ -7,13 +7,30 @@ services:
       - sh
       - -c
       - |
-        python manage.py migrate
+       # python manage.py makemigrations users
+        #python manage.py makemigrations flights
+        #python manage.py migrate
         python manage.py loaddata fixture.json
         python manage.py runserver 0.0.0.0:8000
     volumes:
-      - ./:/usr/src/app/
+      - .:/usr/src/app/
     ports:
       - 8000:8000
+    env_file:
+      - ./.env.dev
+    depends_on:
+      - db_migration
+    networks:
+      - semyon-network
+
+  db_migration:
+    build: .
+    command:
+      - sh
+      - -c
+      - |
+        python manage.py migrate flights
+        python manage.py migrate
     env_file:
       - ./.env.dev
     depends_on:
@@ -32,7 +49,11 @@ services:
       - 5433:5432
     healthcheck:
       test: [ "CMD", "pg_isready", "-q", "-d", "aviablog_db", "-U", "semyon" ]
-
+    networks:
+      - semyon-network
 
 volumes:
   postgres_data:
+networks:
+  semyon-network:
+    driver: bridge

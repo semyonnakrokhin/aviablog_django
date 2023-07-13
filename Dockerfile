@@ -16,7 +16,6 @@ COPY ./requirements.txt .
 
 RUN apt-get update 
 RUN apt-get -y install libpq-dev gcc
-RUN pip install psycopg2
 
 RUN pip install -r requirements.txt
 
@@ -25,3 +24,5 @@ RUN pip install -r requirements.txt
 COPY . .
 
 
+# run commands
+#CMD sh -c "python manage.py migrate && python manage.py loaddata fixture.json && python manage.py runserver 0.0.0.0:8000"
